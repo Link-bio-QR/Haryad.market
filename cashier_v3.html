@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Mobile Cashier V3</title>
+<style>
+:root{--p:#0f766e;--p2:#14b8a6;--bg:#f3f7f7;--card:#fff;--txt:#143135;--muted:#6d8085;--line:#d8e5e7;--red:#b91c1c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Tahoma,Arial,sans-serif}
+.app{max-width:760px;margin:auto;min-height:100vh;padding-bottom:92px}
+.top{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;padding:15px;position:sticky;top:0;z-index:5}
+h1{font-size:20px;margin:0 0 5px}.sub{font-size:12px;opacity:.9}
+#jsStatus{margin-top:8px;display:inline-block;padding:5px 9px;border-radius:999px;background:#7f1d1d;color:#fff;font-size:11px;font-weight:800}
+#jsStatus.on{background:#065f46}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.tabs label{padding:10px 3px;text-align:center;border-radius:11px;background:rgba(255,255,255,.17);font-size:12px;font-weight:800;cursor:pointer}
+input[name=tab]{position:absolute;opacity:0;pointer-events:none}
+main{padding:13px}.page{display:none}
+#t-sell:checked ~ .app .p-sell,
+#t-products:checked ~ .app .p-products,
+#t-add:checked ~ .app .p-add,
+#t-history:checked ~ .app .p-history{display:block}
+#t-sell:checked ~ .app label[for=t-sell],
+#t-products:checked ~ .app label[for=t-products],
+#t-add:checked ~ .app label[for=t-add],
+#t-history:checked ~ .app label[for=t-history]{background:#fff;color:var(--p)}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:0 6px 18px rgba(20,70,70,.05)}
+h3{font-size:15px;margin:0 0 10px}label.f{font-size:12px;font-weight:800;display:block;margin:10px 2px 5px}
+input[type=text],input[type=number],input[type=search]{width:100%;padding:12px;border:1px solid #cbd9dc;border-radius:11px;background:#fff;font-size:16px}
+.row{display:flex;gap:8px;align-items:center}.grow{flex:1;min-width:0}
+.btn{border:0;border-radius:11px;padding:12px 13px;font-weight:800}.primary{background:var(--p);color:#fff}.soft{background:#e8f7f5;color:var(--p)}.danger{background:#fee2e2;color:#991b1b}.full{width:100%}
+.note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:7px}
+.item{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:13px;margin-bottom:8px}.info{flex:1;min-width:0}.meta{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.qty{display:flex;align-items:center;gap:5px}.qty button{width:32px;height:32px;border:0;border-radius:9px;background:#edf5f5;font-weight:900}
+.total{font-size:25px;color:var(--p);font-weight:900}.empty{text-align:center;color:var(--muted);padding:22px}
+.cam{display:none;margin-top:10px}.cam.show{display:block}.cam video{width:100%;max-height:300px;object-fit:cover;background:#000;border-radius:13px}
+.checkout{position:fixed;right:12px;left:12px;bottom:12px;max-width:736px;margin:auto;border:0;border-radius:15px;padding:15px;background:var(--p);color:#fff;font-weight:900;font-size:16px}
+#t-products:checked ~ .app .checkout,#t-add:checked ~ .app .checkout,#t-history:checked ~ .app .checkout{display:none}
+.toast{display:none;position:fixed;bottom:86px;left:50%;transform:translateX(-50%);z-index:99;background:#18383c;color:#fff;padding:10px 13px;border-radius:11px;max-width:90%;text-align:center}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.stat strong{display:block;color:var(--p);font-size:21px}
+noscript{display:block;background:#7f1d1d;color:#fff;padding:12px;text-align:center;font-weight:800}
+</style>
+</head>
+<body>
+<input type="radio" name="tab" id="t-sell" checked>
+<input type="radio" name="tab" id="t-products">
+<input type="radio" name="tab" id="t-add">
+<input type="radio" name="tab" id="t-history">
+
+<div class="app">
+<noscript>⚠️ JavaScript لەم شوێنە ناچالاکە. فایلەکە بە Chrome/Edge بکەرەوە، نەک Preview/File Viewer.</noscript>
+
+<div class="top">
+<h1>🧾 کاشێری مۆبایل</h1>
+<div class="sub">بارکۆد • فرۆشتن • کۆگا • مێژوو</div>
+<div id="jsStatus">JavaScript: OFF / Viewer Mode</div>
+<div class="tabs">
+<label for="t-sell">فرۆشتن</label>
+<label for="t-products">کاڵاکان</label>
+<label for="t-add">زیادکردن</label>
+<label for="t-history">مێژوو</label>
+</div>
+</div>
+
+<main>
+<section class="page p-sell">
+<div class="card">
+<h3>فرۆشتن بە بارکۆد</h3>
+<div class="row">
+<input id="sellCode" type="text" inputmode="numeric" class="grow" placeholder="بارکۆد">
+<button class="btn soft" id="scanSell">📷 سکان</button>
+</div>
+<div id="sellCam" class="cam"><video id="sellVideo" playsinline muted></video><button class="btn danger full" id="stopCam1" style="margin-top:7px">وەستاندن</button></div>
+<div class="note">بارکۆد بنووسە و Enter بکە، یان سکان بکە.</div>
+</div>
+<div class="card"><h3>سەبەتە</h3><div id="cartList"></div></div>
+<div class="card"><div class="row"><div class="grow">کۆی گشتی</div><div><span id="total" class="total">0</span> IQD</div></div></div>
+</section>
+
+<section class="page p-products">
+<div class="card"><input id="search" type="search" placeholder="گەڕان بە ناو یان بارکۆد"></div>
+<div class="card"><div id="productList"></div></div>
+</section>
+
+<section class="page p-add">
+<div class="card">
+<h3>زیادکردنی کاڵا</h3>
+<label class="f">بارکۆد</label>
+<div class="row"><input id="barcode" type="text" inputmode="numeric" class="grow" placeholder="بارکۆد"><button class="btn soft" id="scanAdd">📷 سکان</button></div>
+<div id="addCam" class="cam"><video id="addVideo" playsinline muted></video><button class="btn danger full" id="stopCam2" style="margin-top:7px">وەستاندن</button></div>
+<label class="f">ناوی کاڵا</label><input id="name" type="text" placeholder="مثال: Pepsi 330ml">
+<label class="f">نرخی فرۆشتن</label><input id="price" type="number" inputmode="numeric" min="0" placeholder="1000">
+<label class="f">کۆگا</label><input id="stock" type="number" inputmode="numeric" min="0" placeholder="10">
+<button class="btn primary full" id="save" style="margin-top:13px">هەڵگرتنی کاڵا</button>
+</div>
+</section>
+
+<section class="page p-history">
+<div class="stats"><div class="stat">ژمارەی فرۆشتن<strong id="salesCount">0</strong></div><div class="stat">کۆی داهات<strong id="revenue">0</strong><small> IQD</small></div></div>
+<div class="card" style="margin-top:10px"><div id="history"></div></div>
+</section>
+</main>
+
+<button class="checkout" id="checkout">✅ تەواوکردنی فرۆشتن</button>
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=x=>document.getElementById(x);
+$("jsStatus").textContent="JavaScript: ON ✅";
+$("jsStatus").classList.add("on");
+
+const K1="cashier_v3_products",K2="cashier_v3_sales";
+let products=[],sales=[],cart=[],stream=null,timer=null,detector=null,mode=null;
+
+function load(k){try{return JSON.parse(localStorage.getItem(k)||"[]")}catch(e){return []}}
+function saveAll(){try{localStorage.setItem(K1,JSON.stringify(products));localStorage.setItem(K2,JSON.stringify(sales));return true}catch(e){msg("هەڵگرتنی داتا ڕێگەپێنەدراوە");return false}}
+products=load(K1);sales=load(K2);
+
+function msg(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(e.t);e.t=setTimeout(()=>e.style.display="none",1800)}
+function money(n){return Number(n||0).toLocaleString("en-US")}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function renderCart(){
+ const el=$("cartList");
+ if(!cart.length){el.innerHTML='<div class="empty">هێشتا هیچ کاڵایەک نیە</div>';$("total").textContent="0";return}
+ el.innerHTML=cart.map((c,i)=>`<div class="item"><div class="info"><b>${esc(c.name)}</b><div class="meta">${esc(c.barcode)} • ${money(c.price)} IQD</div></div><div class="qty"><button data-act="minus" data-i="${i}">−</button><b>${c.qty}</b><button data-act="plus" data-i="${i}">+</button></div><b>${money(c.price*c.qty)}</b></div>`).join("");
+ $("total").textContent=money(cart.reduce((a,b)=>a+b.price*b.qty,0));
+}
+$("cartList").addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ const i=Number(b.dataset.i),c=cart[i],p=products.find(x=>x.barcode===c.barcode);if(!c)return;
+ if(b.dataset.act==="plus"){if(c.qty>=p.stock){msg("کۆگا بەس نیە");return}c.qty++}
+ else{c.qty--;if(c.qty<=0)cart.splice(i,1)}
+ renderCart();
+});
+
+function renderProducts(){
+ const q=$("search").value.trim().toLowerCase();
+ const arr=products.filter(p=>!q||p.name.toLowerCase().includes(q)||String(p.barcode).includes(q));
+ $("productList").innerHTML=arr.length?arr.map((p,i)=>`<div class="item"><div class="info"><b>${esc(p.name)}</b><div class="meta">${esc(p.barcode)} • کۆگا: ${p.stock}</div></div><b>${money(p.price)} IQD</b><button class="btn danger" data-del="${esc(p.barcode)}">سڕینەوە</button></div>`).join(""):'<div class="empty">هیچ کاڵایەک نیە</div>';
+}
+$("search").addEventListener("input",renderProducts);
+$("productList").addEventListener("click",e=>{
+ const b=e.target.closest("[data-del]");if(!b)return;
+ if(confirm("دڵنیایت؟")){products=products.filter(p=>p.barcode!==b.dataset.del);saveAll();renderAll()}
+});
+
+function renderHistory(){
+ $("salesCount").textContent=sales.length;
+ $("revenue").textContent=money(sales.reduce((a,b)=>a+b.total,0));
+ $("history").innerHTML=sales.length?sales.map(s=>`<div style="padding:10px 0;border-bottom:1px solid #d8e5e7"><b>${money(s.total)} IQD</b><div class="meta">${esc(s.date)} • ${s.items.reduce((a,b)=>a+b.qty,0)} دانە</div></div>`).join(""):'<div class="empty">هێشتا فرۆشتن نیە</div>';
+}
+function renderAll(){renderCart();renderProducts();renderHistory()}
+
+function addByCode(code){
+ code=String(code||"").trim();if(!code)return;
+ const p=products.find(x=>String(x.barcode)===code);
+ if(!p){msg("ئەم بارکۆدە زیاد نەکراوە");return}
+ const c=cart.find(x=>x.barcode===p.barcode);
+ if((c?c.qty:0)>=p.stock){msg("کۆگا بەس نیە");return}
+ c?c.qty++:cart.push({...p,qty:1});renderCart();msg(p.name+" زیادکرا");
+}
+$("sellCode").addEventListener("keydown",e=>{if(e.key==="Enter"){addByCode(e.target.value);e.target.value=""}});
+
+$("save").addEventListener("click",()=>{
+ const barcode=$("barcode").value.trim(),name=$("name").value.trim(),price=Number($("price").value),stock=Number($("stock").value);
+ if(!barcode||!name||!Number.isFinite(price)||price<0||!Number.isFinite(stock)||stock<0){msg("هەموو خانەکان پڕ بکە");return}
+ const obj={barcode,name,price,stock:Math.floor(stock)},i=products.findIndex(p=>p.barcode===barcode);
+ if(i>=0)products[i]=obj;else products.unshift(obj);
+ saveAll();$("barcode").value=$("name").value=$("price").value=$("stock").value="";renderAll();msg("کاڵا هەڵگیرا ✅");
+});
+
+$("checkout").addEventListener("click",()=>{
+ if(!cart.length){msg("سەبەتە بەتاڵە");return}
+ for(const c of cart){const p=products.find(x=>x.barcode===c.barcode);if(!p||p.stock<c.qty){msg("کۆگا بەس نیە");return}}
+ cart.forEach(c=>products.find(x=>x.barcode===c.barcode).stock-=c.qty);
+ const total=cart.reduce((a,b)=>a+b.price*b.qty,0);
+ sales.unshift({id:Date.now(),date:new Date().toLocaleString(),total,items:cart.map(x=>({...x}))});
+ cart=[];saveAll();renderAll();msg("فرۆشتن تۆمارکرا ✅");
+});
+
+async function startScan(which){
+ stopScan();mode=which;
+ const box=$(which==="sell"?"sellCam":"addCam"),video=$(which==="sell"?"sellVideo":"addVideo");
+ box.classList.add("show");
+ if(!navigator.mediaDevices?.getUserMedia){box.classList.remove("show");msg("Camera API لەم Viewer ـە کار ناکات");return}
+ if(!("BarcodeDetector" in window)){box.classList.remove("show");msg("BarcodeDetector نیە؛ Chrome نوێ تاقی بکە");return}
+ try{
+   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+   video.srcObject=stream;await video.play();
+   detector=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e","code_128","code_39","itf","qr_code"]});
+   const loop=async()=>{if(!stream)return;try{const r=await detector.detect(video);if(r.length){got(r[0].rawValue);return}}catch(e){}timer=setTimeout(loop,220)};
+   loop();
+ }catch(e){box.classList.remove("show");msg("ڕێگەی Camera بدە")}
+}
+function got(code){if(mode==="sell"){addByCode(code)}else{$("barcode").value=code;msg("بارکۆد خوێندرایەوە ✅")}stopScan()}
+function stopScan(){clearTimeout(timer);timer=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$("sellCam").classList.remove("show");$("addCam").classList.remove("show")}
+$("scanSell").addEventListener("click",()=>startScan("sell"));
+$("scanAdd").addEventListener("click",()=>startScan("add"));
+$("stopCam1").addEventListener("click",stopScan);$("stopCam2").addEventListener("click",stopScan);
+
+renderAll();
+})();
+</script>
+</body>
+</html>
